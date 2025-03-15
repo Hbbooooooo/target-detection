@@ -317,6 +317,8 @@
             opacity: 0.5;
             cursor: pointer;
             transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            z-index: 20; /* 提高z-index确保在视频控件之上 */
         }
         
         .video-dot.active {
@@ -339,7 +341,7 @@
             justify-content: center;
             color: white;
             cursor: pointer;
-            z-index: 10;
+            z-index: 20; /* 提高z-index确保在视频控件之上 */
             opacity: 0;
             transition: all 0.3s ease;
         }
@@ -420,6 +422,26 @@
                 width: 12px;
                 height: 12px;
                 margin: 0 8px;
+                /* 增加触摸区域 */
+                position: relative;
+            }
+            
+            .video-dot::after {
+                content: '';
+                position: absolute;
+                top: -10px;
+                left: -10px;
+                right: -10px;
+                bottom: -10px;
+                z-index: 5;
+            }
+            
+            /* 创建一个包装指示器的容器，确保点击区域在视频元素之上 */
+            .video-indicators-wrapper {
+                position: relative;
+                z-index: 25;
+                padding: 10px 5px;
+                margin-top: 10px;
             }
         }
     </style>
@@ -523,10 +545,12 @@
                     </div>
                     
                     <!-- 视频指示器 -->
-                    <div class="flex justify-center mt-6 space-x-4">
-                        <button class="video-dot active" id="dot-1"></button>
-                        <button class="video-dot" id="dot-2"></button>
-                        <button class="video-dot" id="dot-3"></button>
+                    <div class="video-indicators-wrapper">
+                        <div class="flex justify-center mt-6 space-x-4">
+                            <button class="video-dot active" id="dot-1"></button>
+                            <button class="video-dot" id="dot-2"></button>
+                            <button class="video-dot" id="dot-3"></button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -896,6 +920,19 @@
             // 暂停当前视频并保存位置
             if (activeVideo) {
                 activeVideo.pause();
+                try {
+                    // 强制暂停，多一层保障
+                    activeVideo.paused = true;
+                    // 移除控件焦点
+                    activeVideo.blur();
+                    // 临时禁用控件以防事件冲突
+                    activeVideo.controls = false;
+                    setTimeout(() => {
+                        if (activeVideo) activeVideo.controls = true;
+                    }, 800);
+                } catch (e) {
+                    console.log("暂停视频时出错:", e);
+                }
             }
             
             // 标记当前slide为prev，将要离开
@@ -939,7 +976,7 @@
             setTimeout(() => {
                 forcePlayVideo(activeVideo, slideIndex-1);
                 isTransitioning = false;
-            }, 800); // 与CSS过渡时间一致
+            }, 800);
             
             // 重新设置定时器
             clearTimeout(slideTimeout);
@@ -958,6 +995,19 @@
             // 暂停当前视频
             if (activeVideo) {
                 activeVideo.pause();
+                try {
+                    // 强制暂停，多一层保障
+                    activeVideo.paused = true;
+                    // 移除控件焦点
+                    activeVideo.blur();
+                    // 防止事件冲突
+                    activeVideo.controls = false;
+                    setTimeout(() => {
+                        if (activeVideo) activeVideo.controls = true;
+                    }, 800);
+                } catch (e) {
+                    console.log("暂停视频时出错:", e);
+                }
             }
             
             // 当前slide标记为next，将要离开
@@ -1021,7 +1071,22 @@
             const videos = document.querySelectorAll('.video-player');
             
             // 暂停所有视频
-            videos.forEach(video => video.pause());
+            videos.forEach(video => {
+                video.pause();
+                try {
+                    // 强制暂停，多一层保障
+                    video.paused = true;
+                    // 移除控件焦点
+                    video.blur();
+                    // 临时禁用控件以防事件冲突
+                    video.controls = false;
+                    setTimeout(() => {
+                        video.controls = true;
+                    }, 800);
+                } catch (e) {
+                    console.log("暂停视频时出错:", e);
+                }
+            });
             
             // 标记当前slide为离开状态
             slides[slideIndex-1].classList.remove('active');
@@ -1090,6 +1155,7 @@
                 slide.style.display = 'block';
                 slide.style.opacity = '1';
                 slide.style.transform = 'translateX(0)';
+                slide.style.zIndex = '5'; // 确保活动的幻灯片显示在上层
             }
             
             // 如果视频未加载完成，等待加载
@@ -1216,8 +1282,35 @@
                     dot.addEventListener('click', function(e) {
                         e.preventDefault();
                         e.stopPropagation();
+                        
+                        // 如果当前在过渡中或尝试点击当前活动的指示器，则不执行任何操作
+                        if (isTransitioning || index + 1 === slideIndex) return;
+                        
+                        // 先暂停所有视频
+                        const videos = document.querySelectorAll('.video-player');
+                        videos.forEach(video => {
+                            video.pause();
+                            try {
+                                // 强制暂停，多一层保障
+                                video.paused = true;
+                                // 移除控件焦点
+                                video.blur();
+                            } catch (e) {
+                                console.log("暂停视频时出错:", e);
+                            }
+                        });
+                        
+                        // 短暂禁用视频控件，防止冲突
+                        videos.forEach(video => {
+                            video.controls = false;
+                            setTimeout(() => {
+                                video.controls = true;
+                            }, 800);
+                        });
+                        
+                        // 因为我们已经先处理了视频暂停等逻辑，可以安全地调用currentSlide
                         currentSlide(index + 1);
-                    });
+                    }, { capture: true });  // 使用捕获阶段，确保我们的处理程序先运行
                 }
             });
             
