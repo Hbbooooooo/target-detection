@@ -145,168 +145,43 @@
             position: relative;
             overflow: hidden;
             border-radius: 1.5rem;
+            aspect-ratio: 16/9;
+            background-color: #000;
         }
         
         .video-slide {
-            display: none;
-            width: 100%;
             position: absolute;
-            left: 0;
             top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             opacity: 0;
-            transform: translateX(100%);
-            transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-        
-        .video-slide:first-child {
-            position: relative;
-        }
-        
-        .video-slide.prev {
-            display: block;
-            opacity: 0;
-            transform: translateX(-100%);
             z-index: 1;
+            pointer-events: none;
+            transition: opacity 0.6s ease;
         }
         
         .video-slide.active {
-            display: block;
             opacity: 1;
-            transform: translateX(0);
-            z-index: 2;
+            z-index: 5;
+            pointer-events: auto;
         }
         
-        .video-slide.next {
-            display: block;
-            opacity: 0;
-            transform: translateX(100%);
-            z-index: 1;
-        }
-        
-        @keyframes fadeEffect {
-            from {opacity: 0.7; transform: scale(0.95);}
-            to {opacity: 1; transform: scale(1);}
-        }
-        
-        .feature-image {
-            width: 100%;
-            height: auto;
-            border-radius: 1rem;
-            margin-bottom: 1.5rem;
-            transition: all 0.3s ease;
-            object-fit: cover;
-        }
-        
-        .feature-card:hover .feature-image {
-            transform: scale(1.02);
-        }
-        
-        /* 新增：核心功能区样式优化 */
-        .feature-section {
-            margin-bottom: 10rem;
-        }
-        
-        .feature-container {
-            display: flex;
-            flex-direction: column;
-            gap: 10rem;
-        }
-        
-        .feature-block {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        
-        .feature-content {
-            padding: 2rem;
-        }
-        
-        .feature-title {
-            font-size: 2.75rem;
-            font-weight: 700;
-            margin-bottom: 2.5rem;
-            line-height: 1.1;
-            color: white;
-            letter-spacing: -0.02em;
-        }
-        
-        .feature-description {
-            margin-bottom: 2.5rem;
-            font-size: 1.25rem;
-            color: rgba(255, 255, 255, 0.75);
-            line-height: 1.7;
-            font-weight: 400;
-        }
-        
-        .feature-img-container {
-            overflow: hidden;
-            border-radius: 1rem;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            margin-top: 3rem;
-        }
-        
-        .feature-list-item {
-            margin-bottom: 1.25rem;
-            font-size: 1rem;
-        }
-        
-        .feature-list-icon {
-            margin-right: 0.75rem;
-            color: #06b6d4;
-        }
-        
-        /* 新增：方案概述样式 */
-        .overview-section {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-        
-        .overview-title {
-            text-align: center;
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 2.5rem;
-        }
-        
-        .overview-content {
-            font-size: 1.25rem;
-            line-height: 1.8;
-            color: #cbd5e1;
-            text-align: center;
-        }
-        
-        /* 视频容器修复 */
-        .video-container {
-            position: relative;
-            width: 100%;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-        
-        .video-wrapper {
-            border-radius: 1rem;
-            overflow: hidden;
-            background-color: rgba(0, 0, 0, 0.2);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        }
-        
-        /* 视频播放器样式 */
         .video-player {
             width: 100%;
-            display: block;
-            aspect-ratio: 16/9;
+            height: 100%;
             object-fit: cover;
             background-color: #000;
         }
         
-        /* 视频控制样式 */
         .video-controls {
-            margin-top: 1rem;
+            position: relative;
+            margin-top: 1.5rem;
             display: flex;
             justify-content: center;
-            gap: 1rem;
+            gap: 1.25rem;
             align-items: center;
+            z-index: 30;
         }
         
         .video-dot {
@@ -318,7 +193,7 @@
             cursor: pointer;
             transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             position: relative;
-            z-index: 20; /* 提高z-index确保在视频控件之上 */
+            z-index: 30;
         }
         
         .video-dot.active {
@@ -327,7 +202,6 @@
             box-shadow: 0 0 10px rgba(124, 58, 237, 0.5);
         }
         
-        /* 视频切换按钮 */
         .video-nav-btn {
             position: absolute;
             top: 50%;
@@ -341,7 +215,7 @@
             justify-content: center;
             color: white;
             cursor: pointer;
-            z-index: 20; /* 提高z-index确保在视频控件之上 */
+            z-index: 30;
             opacity: 0;
             transition: all 0.3s ease;
         }
@@ -510,23 +384,23 @@
                         <h2 class="text-3xl font-bold gradient-text">识别演示</h2>
                     </div>
                     
-                    <!-- 视频轮播组件 - 使用本地视频 -->
+                    <!-- 视频轮播组件 - 使用阿里云OSS视频 -->
                     <div class="video-container">
                         <div class="video-wrapper">
-                            <div class="video-carousel">
-                                <div class="video-slide active">
+                            <div class="video-carousel" id="video-carousel">
+                                <div class="video-slide active" id="slide-1">
                                     <video id="video-1" class="video-player" preload="auto" controls muted>
                                         <source src="https://kx-equity.oss-cn-shanghai.aliyuncs.com/visiondetection/1.mp4" type="video/mp4">
                                         您的浏览器不支持HTML5视频播放
                                     </video>
                                 </div>
-                                <div class="video-slide">
+                                <div class="video-slide" id="slide-2">
                                     <video id="video-2" class="video-player" preload="auto" controls muted>
                                         <source src="https://kx-equity.oss-cn-shanghai.aliyuncs.com/visiondetection/2.mp4" type="video/mp4">
                                         您的浏览器不支持HTML5视频播放
                                     </video>
                                 </div>
-                                <div class="video-slide">
+                                <div class="video-slide" id="slide-3">
                                     <video id="video-3" class="video-player" preload="auto" controls muted>
                                         <source src="https://kx-equity.oss-cn-shanghai.aliyuncs.com/visiondetection/3.mp4" type="video/mp4">
                                         您的浏览器不支持HTML5视频播放
@@ -545,12 +419,10 @@
                     </div>
                     
                     <!-- 视频指示器 -->
-                    <div class="video-indicators-wrapper">
-                        <div class="flex justify-center mt-6 space-x-4">
-                            <button class="video-dot active" id="dot-1"></button>
-                            <button class="video-dot" id="dot-2"></button>
-                            <button class="video-dot" id="dot-3"></button>
-                        </div>
+                    <div class="video-controls">
+                        <button class="video-dot active" id="dot-1" data-slide="1"></button>
+                        <button class="video-dot" id="dot-2" data-slide="2"></button>
+                        <button class="video-dot" id="dot-3" data-slide="3"></button>
                     </div>
                 </div>
             </div>
@@ -870,512 +742,196 @@
             });
         }
         
-        // 视频轮播功能
-        let slideIndex = 1;
-        let slideTimeout;
-        let activeVideo = null;
-        let isTransitioning = false;
-        let videosLoaded = [false, false, false]; // 跟踪视频加载状态
-        
-        // 触摸滑动变量
-        let touchStartX = 0;
-        let touchEndX = 0;
-        const minSwipeDistance = 50; // 最小滑动距离，低于此值不触发切换
-        
-        // 预加载所有视频
-        function preloadVideos() {
-            const videos = document.querySelectorAll('.video-player');
-            videos.forEach((video, index) => {
-                // 强制开始加载视频
-                video.load();
-                
-                // 监听加载状态
-                video.addEventListener('loadeddata', function() {
-                    videosLoaded[index] = true;
-                    console.log(`视频 ${index+1} 已加载完成`);
-                });
-                
-                // 如果视频已经加载完成但事件没触发
-                if (video.readyState >= 3) {
-                    videosLoaded[index] = true;
-                }
-            });
-        }
-        
-        // 自动切换视频
-        function autoSlide() {
-            if (isTransitioning) return;
-            nextSlide();
-        }
-        
-        // 下一个视频
-        function nextSlide() {
-            if (isTransitioning) return;
-            isTransitioning = true;
-            
-            const slides = document.getElementsByClassName('video-slide');
-            const dots = document.getElementsByClassName('video-dot');
-            const videos = document.querySelectorAll('.video-player');
-            
-            // 暂停当前视频并保存位置
-            if (activeVideo) {
-                activeVideo.pause();
-                try {
-                    // 强制暂停，多一层保障
-                    activeVideo.paused = true;
-                    // 移除控件焦点
-                    activeVideo.blur();
-                    // 临时禁用控件以防事件冲突
-                    activeVideo.controls = false;
-                    setTimeout(() => {
-                        if (activeVideo) activeVideo.controls = true;
-                    }, 800);
-                } catch (e) {
-                    console.log("暂停视频时出错:", e);
-                }
-            }
-            
-            // 标记当前slide为prev，将要离开
-            slides[slideIndex-1].classList.remove('active');
-            slides[slideIndex-1].classList.add('prev');
-            
-            // 重置指示器样式
-            for (let i = 0; i < dots.length; i++) {
-                dots[i].classList.remove('active');
-                dots[i].style.opacity = '0.5';
-            }
-            
-            // 获取下一个索引
-            slideIndex++;
-            if (slideIndex > slides.length) {slideIndex = 1}
-            
-            // 更新下一张幻灯片的CSS类
-            for (let i = 0; i < slides.length; i++) {
-                if (i === slideIndex-1) {
-                    slides[i].classList.remove('next', 'prev');
-                    slides[i].classList.add('active');
-                } else if (i === slideIndex % slides.length) {
-                    slides[i].classList.remove('active', 'prev');
-                    slides[i].classList.add('next');
-                    slides[i].style.display = 'block'; // 确保下一个slide可见
-                } else {
-                    slides[i].classList.remove('active', 'next');
-                    slides[i].classList.add('prev');
-                }
-            }
-            
-            // 激活指示器
-            dots[slideIndex-1].classList.add('active');
-            dots[slideIndex-1].style.opacity = '1';
-            
-            // 获取新视频元素
-            activeVideo = videos[slideIndex-1];
-            activeVideo.currentTime = 0; // 从头开始播放
-            
-            // 延迟播放，等待过渡动画完成
-            setTimeout(() => {
-                forcePlayVideo(activeVideo, slideIndex-1);
-                isTransitioning = false;
-            }, 800);
-            
-            // 重新设置定时器
-            clearTimeout(slideTimeout);
-            slideTimeout = setTimeout(autoSlide, 30000);
-        }
-        
-        // 上一个视频
-        function prevSlide() {
-            if (isTransitioning) return;
-            isTransitioning = true;
-            
-            const slides = document.getElementsByClassName('video-slide');
-            const dots = document.getElementsByClassName('video-dot');
-            const videos = document.querySelectorAll('.video-player');
-            
-            // 暂停当前视频
-            if (activeVideo) {
-                activeVideo.pause();
-                try {
-                    // 强制暂停，多一层保障
-                    activeVideo.paused = true;
-                    // 移除控件焦点
-                    activeVideo.blur();
-                    // 防止事件冲突
-                    activeVideo.controls = false;
-                    setTimeout(() => {
-                        if (activeVideo) activeVideo.controls = true;
-                    }, 800);
-                } catch (e) {
-                    console.log("暂停视频时出错:", e);
-                }
-            }
-            
-            // 当前slide标记为next，将要离开
-            slides[slideIndex-1].classList.remove('active');
-            slides[slideIndex-1].classList.add('next');
-            
-            // 重置指示器
-            for (let i = 0; i < dots.length; i++) {
-                dots[i].classList.remove('active');
-                dots[i].style.opacity = '0.5';
-            }
-            
-            // 获取上一个索引
-            slideIndex--;
-            if (slideIndex < 1) {slideIndex = slides.length}
-            
-            // 更新幻灯片的CSS类
-            for (let i = 0; i < slides.length; i++) {
-                if (i === slideIndex-1) {
-                    slides[i].classList.remove('next', 'prev');
-                    slides[i].classList.add('active');
-                } else if (i === (slideIndex === 1 ? slides.length - 1 : slideIndex - 2)) {
-                    slides[i].classList.remove('active', 'next');
-                    slides[i].classList.add('prev');
-                    slides[i].style.display = 'block'; // 确保上一个slide可见
-                } else {
-                    slides[i].classList.remove('active', 'prev');
-                    slides[i].classList.add('next');
-                }
-            }
-            
-            // 激活指示器
-            dots[slideIndex-1].classList.add('active');
-            dots[slideIndex-1].style.opacity = '1';
-            
-            // 获取新视频元素
-            activeVideo = videos[slideIndex-1];
-            activeVideo.currentTime = 0;
-            
-            // 延迟播放，等待过渡动画完成
-            setTimeout(() => {
-                forcePlayVideo(activeVideo, slideIndex-1);
-                isTransitioning = false;
-            }, 800);
-            
-            // 重新设置定时器
-            clearTimeout(slideTimeout);
-            slideTimeout = setTimeout(autoSlide, 30000);
-        }
-        
-        // 手动切换视频
-        function currentSlide(n) {
-            if (isTransitioning || n === slideIndex) return;
-            
-            // 标记下一个slide的方向
-            const direction = n > slideIndex ? 'next' : 'prev';
-            isTransitioning = true;
-            
-            const slides = document.getElementsByClassName('video-slide');
-            const dots = document.getElementsByClassName('video-dot');
-            const videos = document.querySelectorAll('.video-player');
-            
-            // 暂停所有视频
-            videos.forEach(video => {
-                video.pause();
-                try {
-                    // 强制暂停，多一层保障
-                    video.paused = true;
-                    // 移除控件焦点
-                    video.blur();
-                    // 临时禁用控件以防事件冲突
-                    video.controls = false;
-                    setTimeout(() => {
-                        video.controls = true;
-                    }, 800);
-                } catch (e) {
-                    console.log("暂停视频时出错:", e);
-                }
-            });
-            
-            // 标记当前slide为离开状态
-            slides[slideIndex-1].classList.remove('active');
-            slides[slideIndex-1].classList.add(direction === 'next' ? 'prev' : 'next');
-            
-            // 重置所有指示器
-            for (let i = 0; i < dots.length; i++) {
-                dots[i].classList.remove('active');
-                dots[i].style.opacity = '0.5';
-            }
-            
-            // 设置新的当前索引
-            const oldIndex = slideIndex - 1;
-            slideIndex = n;
-            
-            // 更新幻灯片的CSS类
-            for (let i = 0; i < slides.length; i++) {
-                // 新的活动幻灯片
-                if (i === slideIndex-1) {
-                    slides[i].classList.remove('next', 'prev');
-                    slides[i].classList.add('active');
-                    slides[i].style.display = 'block';
-                } 
-                // 原来的活动幻灯片
-                else if (i === oldIndex) {
-                    slides[i].classList.remove('active');
-                    slides[i].classList.add(direction === 'next' ? 'prev' : 'next');
-                }
-                // 其他幻灯片
-                else {
-                    if (direction === 'next') {
-                        slides[i].classList.remove('active', 'next');
-                        slides[i].classList.add(i < slideIndex-1 ? 'prev' : 'next');
-                    } else {
-                        slides[i].classList.remove('active', 'prev');
-                        slides[i].classList.add(i < slideIndex-1 ? 'prev' : 'next');
-                    }
-                }
-            }
-            
-            dots[slideIndex-1].classList.add('active');
-            dots[slideIndex-1].style.opacity = '1';
-            
-            // 获取新视频元素
-            activeVideo = videos[slideIndex-1];
-            activeVideo.currentTime = 0;
-            
-            // 延迟播放，等待过渡动画完成
-            setTimeout(() => {
-                forcePlayVideo(activeVideo, slideIndex-1);
-                isTransitioning = false;
-            }, 800);
-            
-            // 重新设置定时器
-            clearTimeout(slideTimeout);
-            slideTimeout = setTimeout(autoSlide, 30000);
-        }
-        
-        // 强制播放视频（更可靠的方法）
-        function forcePlayVideo(video, index) {
-            if (!video) return;
-            
-            // 确保视频元素可见
-            const slide = video.closest('.video-slide');
-            if (slide) {
-                slide.style.display = 'block';
-                slide.style.opacity = '1';
-                slide.style.transform = 'translateX(0)';
-                slide.style.zIndex = '5'; // 确保活动的幻灯片显示在上层
-            }
-            
-            // 如果视频未加载完成，等待加载
-            if (!videosLoaded[index]) {
-                console.log(`等待视频 ${index+1} 加载...`);
-                video.addEventListener('loadeddata', function playWhenLoaded() {
-                    playVideoWithFallback(video);
-                    video.removeEventListener('loadeddata', playWhenLoaded);
-                });
-                // 确保加载进程开始
-                video.load();
-            } else {
-                playVideoWithFallback(video);
-            }
-        }
-        
-        // 带有多种回退选项的播放函数
-        function playVideoWithFallback(video) {
-            // 尝试播放
-            const playPromise = video.play();
-            
-            if (playPromise !== undefined) {
-                playPromise.catch(error => {
-                    console.log("播放视频出错:", error);
-                    
-                    // 错误处理和回退策略
-                    if (error.name === "NotAllowedError") {
-                        // 自动播放被阻止，等待用户交互
-                        console.log("自动播放被浏览器阻止，需要用户交互");
-                        // 添加点击监听器以在用户交互时播放
-                        document.addEventListener('click', function tryPlayAgain() {
-                            video.play().catch(e => console.log("重试播放失败:", e));
-                            document.removeEventListener('click', tryPlayAgain);
-                        }, { once: true });
-                        
-                        // 显示播放按钮或提示
-                        const videoContainer = document.querySelector('.video-container');
-                        if (videoContainer) {
-                            videoContainer.classList.add('autoplay-blocked');
-                        }
-                    } else {
-                        // 其他错误，尝试不同的方法
-                        console.log("尝试替代播放方法");
-                        setTimeout(() => {
-                            video.play().catch(e => console.log("替代播放方法也失败:", e));
-                        }, 500);
-                    }
-                });
-            }
-        }
-        
-        // 视频播放的辅助函数
-        function playVideo(video) {
-            // 使用回退策略播放视频
-            playVideoWithFallback(video);
-        }
-        
-        // 处理触摸开始事件
-        function handleTouchStart(e) {
-            touchStartX = e.touches[0].clientX;
-        }
-        
-        // 处理触摸结束事件
-        function handleTouchEnd(e) {
-            if (isTransitioning) return;
-            
-            touchEndX = e.changedTouches[0].clientX;
-            handleSwipe();
-        }
-        
-        // 处理触摸移动事件 - 可选，用于防止页面滚动
-        function handleTouchMove(e) {
-            // 如果是水平滑动，阻止页面滚动
-            if (Math.abs(e.touches[0].clientX - touchStartX) > Math.abs(e.touches[0].clientY - e.touches[0].screenY)) {
-                e.preventDefault();
-            }
-        }
-        
-        // 处理滑动方向逻辑
-        function handleSwipe() {
-            const swipeDistance = touchEndX - touchStartX;
-            
-            // 如果滑动距离小于阈值，不触发切换
-            if (Math.abs(swipeDistance) < minSwipeDistance) return;
-            
-            if (swipeDistance > 0) {
-                // 向右滑动，显示上一个视频
-                prevSlide();
-            } else {
-                // 向左滑动，显示下一个视频
-                nextSlide();
-            }
-        }
+        // 视频轮播功能 - 完全重写
+        let currentVideoIndex = 1;
+        let isChangingVideo = false;
         
         // 初始化视频轮播
         function initVideoCarousel() {
-            const slides = document.getElementsByClassName('video-slide');
-            const videos = document.querySelectorAll('.video-player');
-            const videoCarousel = document.querySelector('.video-carousel');
+            const carousel = document.getElementById('video-carousel');
             const prevBtn = document.getElementById('prev-btn');
             const nextBtn = document.getElementById('next-btn');
-            const dots = [
-                document.getElementById('dot-1'),
-                document.getElementById('dot-2'),
-                document.getElementById('dot-3')
-            ];
-            
-            // 绑定点击事件，使用事件委托更可靠
-            if (prevBtn) prevBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                prevSlide();
-            });
-            
-            if (nextBtn) nextBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                nextSlide();
-            });
-            
-            // 绑定指示器点击事件
-            dots.forEach((dot, index) => {
-                if (dot) {
-                    dot.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        
-                        // 如果当前在过渡中或尝试点击当前活动的指示器，则不执行任何操作
-                        if (isTransitioning || index + 1 === slideIndex) return;
-                        
-                        // 先暂停所有视频
-                        const videos = document.querySelectorAll('.video-player');
-                        videos.forEach(video => {
-                            video.pause();
-                            try {
-                                // 强制暂停，多一层保障
-                                video.paused = true;
-                                // 移除控件焦点
-                                video.blur();
-                            } catch (e) {
-                                console.log("暂停视频时出错:", e);
-                            }
-                        });
-                        
-                        // 短暂禁用视频控件，防止冲突
-                        videos.forEach(video => {
-                            video.controls = false;
-                            setTimeout(() => {
-                                video.controls = true;
-                            }, 800);
-                        });
-                        
-                        // 因为我们已经先处理了视频暂停等逻辑，可以安全地调用currentSlide
-                        currentSlide(index + 1);
-                    }, { capture: true });  // 使用捕获阶段，确保我们的处理程序先运行
-                }
-            });
+            const dots = document.querySelectorAll('.video-dot');
             
             // 预加载所有视频
-            preloadVideos();
-            
-            // 设置初始状态，以便过渡动画正常工作
-            if (slides.length > 1) {
-                slides[1].classList.add('next');
-                slides[1].style.display = 'block'; // 确保下一个slide预先可见
+            const videos = document.querySelectorAll('.video-player');
+            videos.forEach(video => {
+                video.load();
                 
-                if (slides.length > 2) {
-                    for (let i = 2; i < slides.length; i++) {
-                        slides[i].classList.add('next');
+                // 添加监听器确保处理播放结束事件
+                video.addEventListener('ended', () => {
+                    if (!isChangingVideo) {
+                        goToNext();
                     }
-                }
+                });
+            });
+            
+            // 为第一个视频设置自动播放
+            playCurrentVideo();
+            
+            // 添加导航按钮事件监听
+            if (prevBtn) {
+                prevBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    goToPrev();
+                });
             }
             
-            // 视频结束后自动切换到下一个
-            videos.forEach((video, index) => {
-                video.addEventListener('ended', () => {
-                    if (!isTransitioning) {
-                        nextSlide();
+            if (nextBtn) {
+                nextBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    goToNext();
+                });
+            }
+            
+            // 添加指示器点击事件
+            dots.forEach(dot => {
+                dot.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const slideIndex = parseInt(this.getAttribute('data-slide'));
+                    if (!isChangingVideo && slideIndex !== currentVideoIndex) {
+                        changeVideo(slideIndex);
                     }
-                });
+                }, true);
+            });
+            
+            // 添加移动端触摸事件
+            let touchStartX = 0;
+            let touchEndX = 0;
+            
+            if (carousel) {
+                carousel.addEventListener('touchstart', function(e) {
+                    touchStartX = e.touches[0].clientX;
+                }, {passive: true});
                 
-                // 监听视频播放错误
-                video.addEventListener('error', (e) => {
-                    console.error(`视频 ${index+1} 加载错误:`, e);
-                });
-            });
-            
-            // 确保第一个视频加载完毕并播放
-            activeVideo = videos[0];
-            forcePlayVideo(activeVideo, 0);
-            
-            // 手动触发加载所有视频
-            videos.forEach(video => {
-                // 直接开始下载视频数据
-                if (video.preload !== 'auto') {
-                    video.preload = 'auto';
-                }
-                video.load();
-            });
-            
-            // 添加触摸事件监听，实现移动端滑动切换
-            if (videoCarousel) {
-                videoCarousel.addEventListener('touchstart', handleTouchStart, {passive: true});
-                videoCarousel.addEventListener('touchend', handleTouchEnd, {passive: true});
-                // 使用非被动监听以便可以阻止滚动
-                videoCarousel.addEventListener('touchmove', handleTouchMove, {passive: false});
+                carousel.addEventListener('touchend', function(e) {
+                    touchEndX = e.changedTouches[0].clientX;
+                    const diffX = touchEndX - touchStartX;
+                    
+                    if (Math.abs(diffX) > 50) { // 最小滑动距离
+                        if (diffX > 0) {
+                            goToPrev();
+                        } else {
+                            goToNext();
+                        }
+                    }
+                }, {passive: true});
             }
         }
         
-        // 检查视频状态
-        function checkVideosStatus() {
-            const videos = document.querySelectorAll('.video-player');
-            videos.forEach((video, index) => {
-                console.log(`视频 ${index+1} 加载状态: ${video.readyState}, 网络状态: ${video.networkState}`);
-                // 如果视频已经可以播放
-                if (video.readyState >= 3 && !videosLoaded[index]) {
-                    videosLoaded[index] = true;
-                    console.log(`视频 ${index+1} 标记为已加载`);
+        // 播放当前视频
+        function playCurrentVideo() {
+            const video = document.getElementById(`video-${currentVideoIndex}`);
+            if (video) {
+                try {
+                    // 可能需要重置
+                    video.currentTime = 0;
+                    
+                    // 尝试播放
+                    const playPromise = video.play();
+                    
+                    if (playPromise !== undefined) {
+                        playPromise.catch(error => {
+                            console.log("无法自动播放视频:", error);
+                            // 移动设备上的自动播放可能被阻止，我们添加一个点击监听器
+                            document.addEventListener('click', clickToPlayVideo, {once: true});
+                        });
+                    }
+                } catch (e) {
+                    console.error("播放视频时出错:", e);
                 }
-            });
+            }
+        }
+        
+        // 点击播放视频的辅助函数
+        function clickToPlayVideo() {
+            const video = document.getElementById(`video-${currentVideoIndex}`);
+            if (video) {
+                video.play().catch(e => console.log("点击尝试播放失败:", e));
+            }
+        }
+        
+        // 切换到下一个视频
+        function goToNext() {
+            const nextIndex = currentVideoIndex >= 3 ? 1 : currentVideoIndex + 1;
+            changeVideo(nextIndex);
+        }
+        
+        // 切换到上一个视频
+        function goToPrev() {
+            const prevIndex = currentVideoIndex <= 1 ? 3 : currentVideoIndex - 1;
+            changeVideo(prevIndex);
+        }
+        
+        // 切换到指定视频
+        function changeVideo(newIndex) {
+            if (isChangingVideo || newIndex === currentVideoIndex) return;
+            
+            isChangingVideo = true;
+            
+            // 暂停当前视频
+            const currentVideo = document.getElementById(`video-${currentVideoIndex}`);
+            const currentSlide = document.getElementById(`slide-${currentVideoIndex}`);
+            const currentDot = document.getElementById(`dot-${currentVideoIndex}`);
+            
+            if (currentVideo) {
+                currentVideo.pause();
+                try {
+                    // 尝试重置视频状态
+                    currentVideo.currentTime = 0;
+                } catch (e) {
+                    console.error("重置视频时出错:", e);
+                }
+            }
+            
+            // 更新指示器
+            if (currentDot) {
+                currentDot.classList.remove('active');
+            }
+            
+            // 隐藏当前幻灯片
+            if (currentSlide) {
+                currentSlide.classList.remove('active');
+            }
+            
+            // 切换到新视频
+            const newVideo = document.getElementById(`video-${newIndex}`);
+            const newSlide = document.getElementById(`slide-${newIndex}`);
+            const newDot = document.getElementById(`dot-${newIndex}`);
+            
+            // 更新指示器
+            if (newDot) {
+                newDot.classList.add('active');
+            }
+            
+            // 显示新幻灯片
+            if (newSlide) {
+                newSlide.classList.add('active');
+            }
+            
+            // 更新当前索引
+            currentVideoIndex = newIndex;
+            
+            // 重置视频状态并播放
+            if (newVideo) {
+                setTimeout(() => {
+                    try {
+                        // 确保视频已重置
+                        newVideo.currentTime = 0;
+                        playCurrentVideo();
+                        isChangingVideo = false;
+                    } catch (e) {
+                        console.error("播放新视频时出错:", e);
+                        isChangingVideo = false;
+                    }
+                }, 100);
+            } else {
+                isChangingVideo = false;
+            }
         }
         
         // 页面加载时执行
@@ -1383,11 +939,8 @@
             fadeInOnScroll();
             initVideoCarousel();
             
-            // 设置自动轮播定时器
-            slideTimeout = setTimeout(autoSlide, 30000);
-            
-            // 定期检查视频状态
-            setInterval(checkVideosStatus, 2000);
+            // 滚动监听
+            window.addEventListener('scroll', fadeInOnScroll);
         };
     </script>
 </body>
