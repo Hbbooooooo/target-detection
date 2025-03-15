@@ -376,6 +376,37 @@
                 width: 50%;
             }
         }
+
+        /* 添加视频区域弥散效果背景 */
+        .video-section-bg {
+            position: relative;
+        }
+        
+        .video-section-bg::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            left: -20%;
+            width: 140%;
+            height: 120%;
+            background: radial-gradient(circle at center, rgba(124, 58, 237, 0.15) 0%, rgba(59, 130, 246, 0.1) 30%, transparent 70%);
+            z-index: -1;
+            filter: blur(60px);
+            pointer-events: none;
+        }
+        
+        .video-section-bg::after {
+            content: '';
+            position: absolute;
+            top: 20%;
+            right: -10%;
+            width: 80%;
+            height: 80%;
+            background: radial-gradient(circle at center, rgba(6, 182, 212, 0.12) 0%, rgba(79, 70, 229, 0.08) 40%, transparent 70%);
+            z-index: -1;
+            filter: blur(50px);
+            pointer-events: none;
+        }
     </style>
 </head>
 <body class="text-gray-200">
@@ -417,18 +448,17 @@
     <!-- 页面主体 -->
     <main class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-24">
         <!-- 页面标题 -->
-        <div class="text-center mb-32 fade-in">
-            <h1 class="text-5xl font-bold text-white mb-8 sm:text-6xl leading-tight tracking-tight">
-                基于视频监控的<span class="gradient-text">人员行动轨迹识别</span>方案
-            </h1>
-            <p class="max-w-3xl mx-auto text-xl text-trae-gray-light leading-relaxed whitespace-normal">
-                利用计算机视觉与深度学习技术，实现高效、准确的人员轨迹识别与行为分析
-            </p>
-            
-            <!-- 视觉元素 -->
-            <div class="mt-16 relative">
-                <div class="absolute -left-4 -top-4 w-32 h-32 rounded-full animated-gradient opacity-20 blur-xl"></div>
-                <div class="absolute -right-8 -bottom-8 w-40 h-40 rounded-full animated-gradient opacity-20 blur-xl"></div>
+        <div class="py-24 md:py-32 max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 video-section-bg">
+            <div class="flex flex-col items-center">
+                <div class="text-center mb-16">
+                    <h1 class="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
+                        基于视频监控的<br class="md:hidden">
+                        <span class="gradient-text">人员轨迹识别</span>系统
+                    </h1>
+                    <p class="text-trae-gray-light text-xl md:text-2xl max-w-3xl mx-auto whitespace-normal">
+                        利用计算机视觉与深度学习技术，实现高效、准确的人员轨迹识别与行为分析
+                    </p>
+                </div>
             </div>
         </div>
 
@@ -520,7 +550,7 @@
                         <ul class="space-y-4 text-trae-gray-light">
                             <li class="flex items-start">
                                 <i class="fas fa-check-circle text-trae-cyan mt-1 mr-3"></i>
-                                <span><strong class="text-white">多模型融合：</strong>结合YOLOv8与DeepSORT算法，实现人员精准检测与持续稳定跟踪</span>
+                                <span><strong class="text-white">多模型融合：</strong>结合YOLOv8与DeepSORT等深度学习算法，实现人员精准检测与持续稳定跟踪</span>
                             </li>
                             <li class="flex items-start">
                                 <i class="fas fa-check-circle text-trae-cyan mt-1 mr-3"></i>
@@ -752,21 +782,6 @@
                 </div>
             </div>
         </section>
-
-        <!-- 行动号召 -->
-        <section class="text-center mb-24 section-spacing">
-            <h2 class="text-4xl font-bold gradient-text mb-8">立即开始实施</h2>
-            <p class="text-trae-gray-light mb-12 max-w-2xl mx-auto text-xl leading-relaxed">
-                部署基于视频监控的人员行动轨迹识别系统，提升安全管理水平，优化运营效率。
-            </p>
-            <button class="btn-gradient text-white font-semibold py-5 px-12 rounded-full shadow-lg text-lg">
-                联系我们获取方案
-            </button>
-            <!-- 添加装饰性元素 -->
-            <div class="relative mt-12">
-                <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-16 w-64 h-16 rounded-full animated-gradient opacity-10 blur-xl"></div>
-            </div>
-        </section>
     </main>
 
     <!-- 页脚 -->
@@ -822,6 +837,11 @@
         let activeVideo = null;
         let isTransitioning = false;
         let videosLoaded = [false, false, false]; // 跟踪视频加载状态
+        
+        // 触摸滑动变量
+        let touchStartX = 0;
+        let touchEndX = 0;
+        const minSwipeDistance = 50; // 最小滑动距离，低于此值不触发切换
         
         // 预加载所有视频
         function preloadVideos() {
@@ -1112,10 +1132,48 @@
             playVideoWithFallback(video);
         }
         
+        // 处理触摸开始事件
+        function handleTouchStart(e) {
+            touchStartX = e.touches[0].clientX;
+        }
+        
+        // 处理触摸结束事件
+        function handleTouchEnd(e) {
+            if (isTransitioning) return;
+            
+            touchEndX = e.changedTouches[0].clientX;
+            handleSwipe();
+        }
+        
+        // 处理触摸移动事件 - 可选，用于防止页面滚动
+        function handleTouchMove(e) {
+            // 如果是水平滑动，阻止页面滚动
+            if (Math.abs(e.touches[0].clientX - touchStartX) > Math.abs(e.touches[0].clientY - e.touches[0].screenY)) {
+                e.preventDefault();
+            }
+        }
+        
+        // 处理滑动方向逻辑
+        function handleSwipe() {
+            const swipeDistance = touchEndX - touchStartX;
+            
+            // 如果滑动距离小于阈值，不触发切换
+            if (Math.abs(swipeDistance) < minSwipeDistance) return;
+            
+            if (swipeDistance > 0) {
+                // 向右滑动，显示上一个视频
+                prevSlide();
+            } else {
+                // 向左滑动，显示下一个视频
+                nextSlide();
+            }
+        }
+        
         // 初始化视频轮播
         function initVideoCarousel() {
             const slides = document.getElementsByClassName('video-slide');
             const videos = document.querySelectorAll('.video-player');
+            const videoCarousel = document.querySelector('.video-carousel');
             
             // 预加载所有视频
             preloadVideos();
@@ -1158,6 +1216,14 @@
                 }
                 video.load();
             });
+            
+            // 添加触摸事件监听，实现移动端滑动切换
+            if (videoCarousel) {
+                videoCarousel.addEventListener('touchstart', handleTouchStart, {passive: true});
+                videoCarousel.addEventListener('touchend', handleTouchEnd, {passive: true});
+                // 使用非被动监听以便可以阻止滚动
+                videoCarousel.addEventListener('touchmove', handleTouchMove, {passive: false});
+            }
         }
         
         // 检查视频状态
