@@ -159,12 +159,14 @@
             z-index: 1;
             pointer-events: none;
             transition: opacity 0.6s ease;
+            transform: none !important;
         }
         
         .video-slide.active {
             opacity: 1;
             z-index: 5;
             pointer-events: auto;
+            transform: none !important;
         }
         
         .video-player {
@@ -316,6 +318,14 @@
                 z-index: 25;
                 padding: 10px 5px;
                 margin-top: 10px;
+            }
+            
+            .video-slide {
+                transition: opacity 0.5s ease;
+                /* 防止任何可能的移动位置变换 */
+                transform: none !important;
+                left: 0 !important;
+                right: 0 !important;
             }
         }
     </style>
@@ -867,7 +877,7 @@
             changeVideo(prevIndex);
         }
         
-        // 切换到指定视频
+        // 切换到指定视频 - 修复移动设备上的问题
         function changeVideo(newIndex) {
             if (isChangingVideo || newIndex === currentVideoIndex) return;
             
@@ -880,8 +890,11 @@
             
             if (currentVideo) {
                 currentVideo.pause();
+                // 立即隐藏视频控件以避免交互问题
+                currentVideo.controls = false;
                 try {
-                    // 尝试重置视频状态
+                    // 取消焦点以防止键盘控制和其他交互
+                    currentVideo.blur();
                     currentVideo.currentTime = 0;
                 } catch (e) {
                     console.error("重置视频时出错:", e);
@@ -893,45 +906,59 @@
                 currentDot.classList.remove('active');
             }
             
-            // 隐藏当前幻灯片
-            if (currentSlide) {
-                currentSlide.classList.remove('active');
-            }
-            
-            // 切换到新视频
+            // 获取新的视频元素
             const newVideo = document.getElementById(`video-${newIndex}`);
             const newSlide = document.getElementById(`slide-${newIndex}`);
             const newDot = document.getElementById(`dot-${newIndex}`);
+            
+            // 预先准备新视频
+            if (newVideo) {
+                // 确保新视频已暂停并重置
+                newVideo.pause();
+                try {
+                    newVideo.currentTime = 0;
+                    // 先禁用控件直到过渡完成
+                    newVideo.controls = false;
+                } catch (e) {
+                    console.error("准备新视频时出错:", e);
+                }
+            }
             
             // 更新指示器
             if (newDot) {
                 newDot.classList.add('active');
             }
             
-            // 显示新幻灯片
-            if (newSlide) {
-                newSlide.classList.add('active');
-            }
-            
-            // 更新当前索引
-            currentVideoIndex = newIndex;
-            
-            // 重置视频状态并播放
-            if (newVideo) {
+            // 设置一个短暂延迟来执行过渡
+            // 这可以防止浏览器同时处理样式和DOM变化
+            setTimeout(() => {
+                // 首先隐藏当前幻灯片
+                if (currentSlide) {
+                    currentSlide.classList.remove('active');
+                    // 强制浏览器重新计算样式
+                    void currentSlide.offsetWidth;
+                }
+                
+                // 然后显示新幻灯片
+                if (newSlide) {
+                    // 确保没有任何过渡中的样式残留
+                    newSlide.style.transform = 'none';
+                    newSlide.classList.add('active');
+                }
+                
+                // 更新当前索引
+                currentVideoIndex = newIndex;
+                
+                // 延迟播放新视频直到过渡完成
                 setTimeout(() => {
-                    try {
-                        // 确保视频已重置
-                        newVideo.currentTime = 0;
+                    if (newVideo) {
+                        // 重新启用控件
+                        newVideo.controls = true;
                         playCurrentVideo();
-                        isChangingVideo = false;
-                    } catch (e) {
-                        console.error("播放新视频时出错:", e);
-                        isChangingVideo = false;
                     }
-                }, 100);
-            } else {
-                isChangingVideo = false;
-            }
+                    isChangingVideo = false;
+                }, 600); // 与CSS过渡时间匹配
+            }, 50); // 给浏览器一点时间处理DOM更新
         }
         
         // 页面加载时执行
