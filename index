@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基于视频监控的人员行动轨迹识别方案</title>
+    <!-- TailwindCSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome 图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 自定义Tailwind配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        trae: {
+                            purple: '#7c3aed',
+                            indigo: '#4f46e5',
+                            blue: '#3b82f6',
+                            cyan: '#06b6d4',
+                            light: '#f5f7ff',
+                            dark: '#0f172a',
+                            darker: '#020617',
+                            gray: '#94a3b8',
+                            'gray-light': '#cbd5e1',
+                            'gray-dark': '#334155',
+                            neutral: '#f8fafc',
+                        },
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    backgroundImage: {
+                        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: #020617;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(124, 58, 237, 0.05) 0%, transparent 35%),
+                radial-gradient(circle at 85% 30%, rgba(6, 182, 212, 0.05) 0%, transparent 35%);
+            background-attachment: fixed;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.6s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .gradient-text {
+            background: linear-gradient(90deg, #7c3aed, #3b82f6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .glass-card {
+            background: rgba(10, 15, 30, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px -5px rgba(6, 182, 212, 0.1), 0 10px 15px -5px rgba(124, 58, 237, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .feature-icon {
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover .feature-icon {
+            transform: scale(1.1);
+        }
+        
+        .btn-gradient {
+            background: linear-gradient(90deg, #7c3aed, #4f46e5);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-gradient:hover {
+            background: linear-gradient(90deg, #6d28d9, #4338ca);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(124, 58, 237, 0.5);
+        }
+        
+        .animated-gradient {
+            background: linear-gradient(-45deg, #7c3aed, #4f46e5, #3b82f6, #06b6d4);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .glow {
+            box-shadow: 0 0 25px rgba(124, 58, 237, 0.3);
+        }
+        
+        .bg-dots {
+            background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        
+        .section-spacing {
+            margin-top: 10rem;
+            margin-bottom: 10rem;
+        }
+        
+        .card-grid {
+            gap: 2rem;
+        }
+        
+        .rounded-xl-plus {
+            border-radius: 1rem;
+        }
+        
+        .rounded-2xl-plus {
+            border-radius: 1.5rem;
+        }
+        
+        .video-carousel {
+            position: relative;
+            overflow: hidden;
+            border-radius: 1.5rem;
+        }
+        
+        .video-slide {
+            display: none;
+            width: 100%;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        .video-slide:first-child {
+            position: relative;
+        }
+        
+        .video-slide.prev {
+            display: block;
+            opacity: 0;
+            transform: translateX(-100%);
+            z-index: 1;
+        }
+        
+        .video-slide.active {
+            display: block;
+            opacity: 1;
+            transform: translateX(0);
+            z-index: 2;
+        }
+        
+        .video-slide.next {
+            display: block;
+            opacity: 0;
+            transform: translateX(100%);
+            z-index: 1;
+        }
+        
+        @keyframes fadeEffect {
+            from {opacity: 0.7; transform: scale(0.95);}
+            to {opacity: 1; transform: scale(1);}
+        }
+        
+        .feature-image {
+            width: 100%;
+            height: auto;
+            border-radius: 1rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+            object-fit: cover;
+        }
+        
+        .feature-card:hover .feature-image {
+            transform: scale(1.02);
+        }
+        
+        /* 新增：核心功能区样式优化 */
+        .feature-section {
+            margin-bottom: 10rem;
+        }
+        
+        .feature-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10rem;
+        }
+        
+        .feature-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .feature-content {
+            padding: 2rem;
+        }
+        
+        .feature-title {
+            font-size: 2.75rem;
+            font-weight: 700;
+            margin-bottom: 2.5rem;
+            line-height: 1.1;
+            color: white;
+            letter-spacing: -0.02em;
+        }
+        
+        .feature-description {
+            margin-bottom: 2.5rem;
+            font-size: 1.25rem;
+            color: rgba(255, 255, 255, 0.75);
+            line-height: 1.7;
+            font-weight: 400;
+        }
+        
+        .feature-img-container {
+            overflow: hidden;
+            border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            margin-top: 3rem;
+        }
+        
+        .feature-list-item {
+            margin-bottom: 1.25rem;
+            font-size: 1rem;
+        }
+        
+        .feature-list-icon {
+            margin-right: 0.75rem;
+            color: #06b6d4;
+        }
+        
+        /* 新增：方案概述样式 */
+        .overview-section {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .overview-title {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 2.5rem;
+        }
+        
+        .overview-content {
+            font-size: 1.25rem;
+            line-height: 1.8;
+            color: #cbd5e1;
+            text-align: center;
+        }
+        
+        /* 视频容器修复 */
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .video-wrapper {
+            border-radius: 1rem;
+            overflow: hidden;
+            background-color: rgba(0, 0, 0, 0.2);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        
+        /* 视频播放器样式 */
+        .video-player {
+            width: 100%;
+            display: block;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+            background-color: #000;
+        }
+        
+        /* 视频控制样式 */
+        .video-controls {
+            margin-top: 1rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .video-dot {
+            width: 0.75rem;
+            height: 0.75rem;
+            border-radius: 50%;
+            background-color: #7c3aed;
+            opacity: 0.5;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        .video-dot.active {
+            opacity: 1;
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(124, 58, 237, 0.5);
+        }
+        
+        /* 视频切换按钮 */
+        .video-nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 40px;
+            background-color: rgba(10, 15, 30, 0.5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            z-index: 10;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .video-container:hover .video-nav-btn {
+            opacity: 0.8;
+        }
+        
+        .video-nav-btn:hover {
+            background-color: rgba(124, 58, 237, 0.8);
+            opacity: 1;
+        }
+        
+        .video-nav-prev {
+            left: 20px;
+        }
+        
+        .video-nav-next {
+            right: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            .feature-block {
+                flex-direction: row;
+                gap: 4rem;
+            }
+            
+            .feature-block.reverse {
+                flex-direction: row-reverse;
+            }
+            
+            .feature-content, 
+            .feature-img-container {
+                width: 50%;
+            }
+        }
+    </style>
+</head>
+<body class="text-gray-200">
+    <!-- 导航栏 -->
+    <nav class="glass-card sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+            <div class="flex justify-between h-20">
+                <div class="flex items-center">
+                    <span class="text-white text-xl font-semibold">
+                        <i class="fas fa-video mr-2 text-trae-cyan"></i>
+                        <span class="gradient-text">轨迹识别系统</span>
+                    </span>
+                </div>
+                <div class="hidden md:flex items-center space-x-10">
+                    <a href="#overview" class="text-trae-gray hover:text-white px-3 py-2 text-sm font-medium transition-colors duration-200">概述</a>
+                    <a href="#features" class="text-trae-gray hover:text-white px-3 py-2 text-sm font-medium transition-colors duration-200">核心功能</a>
+                    <a href="#tech" class="text-trae-gray hover:text-white px-3 py-2 text-sm font-medium transition-colors duration-200">技术实现</a>
+                    <a href="#advantages" class="text-trae-gray hover:text-white px-3 py-2 text-sm font-medium transition-colors duration-200">方案优势</a>
+                </div>
+                <div class="md:hidden flex items-center">
+                    <button id="mobile-menu-button" class="text-trae-gray hover:text-white">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 移动端菜单 -->
+        <div id="mobile-menu" class="hidden md:hidden glass-card border-t border-gray-800">
+            <div class="px-4 pt-3 pb-4 space-y-2">
+                <a href="#overview" class="block px-4 py-3 rounded-xl text-base font-medium text-trae-gray hover:text-white hover:bg-trae-dark">概述</a>
+                <a href="#features" class="block px-4 py-3 rounded-xl text-base font-medium text-trae-gray hover:text-white hover:bg-trae-dark">核心功能</a>
+                <a href="#tech" class="block px-4 py-3 rounded-xl text-base font-medium text-trae-gray hover:text-white hover:bg-trae-dark">技术实现</a>
+                <a href="#advantages" class="block px-4 py-3 rounded-xl text-base font-medium text-trae-gray hover:text-white hover:bg-trae-dark">方案优势</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 页面主体 -->
+    <main class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-24">
+        <!-- 页面标题 -->
+        <div class="text-center mb-32 fade-in">
+            <h1 class="text-5xl font-bold text-white mb-8 sm:text-6xl leading-tight tracking-tight">
+                基于视频监控的<span class="gradient-text">人员行动轨迹识别</span>方案
+            </h1>
+            <p class="max-w-3xl mx-auto text-xl text-trae-gray-light leading-relaxed whitespace-normal">
+                利用计算机视觉与深度学习技术，实现高效、准确的人员轨迹识别与行为分析
+            </p>
+            
+            <!-- 视觉元素 -->
+            <div class="mt-16 relative">
+                <div class="absolute -left-4 -top-4 w-32 h-32 rounded-full animated-gradient opacity-20 blur-xl"></div>
+                <div class="absolute -right-8 -bottom-8 w-40 h-40 rounded-full animated-gradient opacity-20 blur-xl"></div>
+            </div>
+        </div>
+
+        <!-- 视频轮播区域 -->
+        <div class="mb-32 fade-in">
+            <div class="glass-card rounded-2xl-plus overflow-hidden">
+                <div class="px-10 py-12">
+                    <div class="flex items-center mb-8">
+                        <div class="bg-gradient-to-r from-trae-purple to-trae-blue rounded-xl-plus p-4 mr-5 glow opacity-90">
+                            <i class="fas fa-video text-white text-xl"></i>
+                        </div>
+                        <h2 class="text-3xl font-bold gradient-text">识别演示</h2>
+                    </div>
+                    
+                    <!-- 视频轮播组件 - 使用本地视频 -->
+                    <div class="video-container">
+                        <div class="video-wrapper">
+                            <div class="video-carousel">
+                                <div class="video-slide active">
+                                    <video id="video-1" class="video-player" preload="auto" controls muted>
+                                        <source src="https://kx-equity.oss-cn-shanghai.aliyuncs.com/visiondetection/1.mp4" type="video/mp4">
+                                        您的浏览器不支持HTML5视频播放
+                                    </video>
+                                </div>
+                                <div class="video-slide">
+                                    <video id="video-2" class="video-player" preload="auto" controls muted>
+                                        <source src="https://kx-equity.oss-cn-shanghai.aliyuncs.com/visiondetection/2.mp4" type="video/mp4">
+                                        您的浏览器不支持HTML5视频播放
+                                    </video>
+                                </div>
+                                <div class="video-slide">
+                                    <video id="video-3" class="video-player" preload="auto" controls muted>
+                                        <source src="https://kx-equity.oss-cn-shanghai.aliyuncs.com/visiondetection/3.mp4" type="video/mp4">
+                                        您的浏览器不支持HTML5视频播放
+                                    </video>
+                                </div>
+                            </div>
+                            
+                            <!-- 视频导航按钮 -->
+                            <button class="video-nav-btn video-nav-prev" onclick="prevSlide()">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button class="video-nav-btn video-nav-next" onclick="nextSlide()">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 视频指示器 -->
+                    <div class="flex justify-center mt-6 space-x-4">
+                        <button class="video-dot active" onclick="currentSlide(1)"></button>
+                        <button class="video-dot" onclick="currentSlide(2)"></button>
+                        <button class="video-dot" onclick="currentSlide(3)"></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 概述部分 - 重新设计为trae风格 -->
+        <section id="overview" class="section-spacing fade-in">
+            <div class="overview-section">
+                <h2 class="overview-title gradient-text">方案概述</h2>
+                <p class="overview-content">
+                    依托现有视频监控系统，利用计算机视觉与深度学习技术，通过目标检测、时序跟踪、多摄像头数据关联等核心技术，实现视频驱动的人员行动轨迹识别。系统可实时绘制人员运动路径、记录停留时长、分析行为模式，并支持轨迹回溯与异常预警，最大化利用现有监控硬件资源。
+                </p>
+                
+                <!-- 装饰性元素 -->
+                <div class="relative mt-12">
+                    <div class="absolute left-1/2 transform -translate-x-1/2 bottom-0 w-40 h-10 rounded-full animated-gradient opacity-10 blur-xl"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 核心功能设计 -->
+        <section id="features" class="section-spacing">
+            <div class="text-center mb-20">
+                <h2 class="text-4xl font-bold gradient-text mb-8 inline-block">核心功能设计</h2>
+                <div class="h-1 w-32 bg-gradient-to-r from-trae-purple to-trae-cyan mx-auto rounded-full"></div>
+            </div>
+            
+            <div class="feature-container">
+                <!-- 功能1：左文案右图片 -->
+                <div class="feature-block">
+                    <div class="feature-content">
+                        <h3 class="feature-title">实时目标检测与智能跟踪</h3>
+                        <p class="feature-description">
+                            我们的系统利用先进的视觉算法，能在复杂多变的环境中精确捕捉和跟踪人员移动。即使在人员密集区域、光线变化或部分遮挡情况下，依然保持高精度的识别和稳定的跟踪能力。
+                        </p>
+                        <ul class="space-y-4 text-trae-gray-light">
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-trae-cyan mt-1 mr-3"></i>
+                                <span><strong class="text-white">多模型融合：</strong>结合YOLOv8与DeepSORT算法，实现人员精准检测与持续稳定跟踪</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-trae-cyan mt-1 mr-3"></i>
+                                <span><strong class="text-white">特征提取增强：</strong>采用深度残差网络提取目标特征，保证在光照变化、角度变化下保持识别一致性</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-trae-cyan mt-1 mr-3"></i>
+                                <span><strong class="text-white">实时性能：</strong>优化算法计算效率，在标准GPU服务器上支持30FPS的实时分析</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="feature-img-container">
+                        <img src="https://kx-equity.oss-cn-shanghai.aliyuncs.com/visiondetection/1-%E7%9B%AE%E6%A0%87%E6%A3%80%E6%B5%8B.png" alt="目标检测与跟踪" class="w-full h-auto object-cover">
+                    </div>
+                </div>
+                
+                <!-- 功能2：左图片右文案 -->
+                <div class="feature-block reverse">
+                    <div class="feature-content">
+                        <h3 class="feature-title">轨迹可视化与行为分析</h3>
+                        <p class="feature-description">
+                            将复杂的轨迹数据转化为直观的可视化信息，帮助管理者快速理解人员移动模式。通过数据驱动的分析方法，挖掘行为规律，为空间优化和运营决策提供支持。
+                        </p>
+                        <ul class="space-y-4 text-trae-gray-light">
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-trae-cyan mt-1 mr-3"></i>
+                                <span><strong class="text-white">多维度轨迹展示：</strong>支持热力图、路径线、停留点等多种可视化形式，满足不同分析需求</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-trae-cyan mt-1 mr-3"></i>
+                                <span><strong class="text-white">时空聚类分析：</strong>自动识别高频路径与异常轨迹，挖掘空间利用模式</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-trae-cyan mt-1 mr-3"></i>
+                                <span><strong class="text-white">行为特征提取：</strong>分析停留时长、移动速度、交互频次等行为特征，构建行为画像</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="feature-img-container">
+                        <img src="https://kx-equity.oss-cn-shanghai.aliyuncs.com/visiondetection/2-%E8%BF%90%E5%8A%A8%E8%BD%A8%E8%BF%B9.png" alt="轨迹可视化与分析" class="w-full h-auto object-cover">
+                    </div>
+                </div>
+                
+                <!-- 功能3：左文案右图片 -->
+                <div class="feature-block">
+                    <div class="feature-content">
+                        <h3 class="feature-title">智能预警与安全防护</h3>
+                        <p class="feature-description">
+                            基于先进的行为识别技术，系统能主动发现异常行为和潜在安全风险。通过自定义规则和智能学习，为不同场景提供针对性的安全防护，大幅提升监控效率。
+                        </p>
+                        <ul class="space-y-4 text-trae-gray-light">
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-trae-cyan mt-1 mr-3"></i>
+                                <span><strong class="text-white">区域入侵检测：</strong>针对禁区、危险区域设置虚拟围栏，实时监测越界行为</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-trae-cyan mt-1 mr-3"></i>
+                                <span><strong class="text-white">异常行为识别：</strong>自动检测徘徊、奔跑、摔倒等异常行为模式，及时预警</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-trae-cyan mt-1 mr-3"></i>
+                                <span><strong class="text-white">自适应阈值：</strong>根据不同场景和时段，动态调整预警阈值，减少误报</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="feature-img-container">
+                        <img src="https://kx-equity.oss-cn-shanghai.aliyuncs.com/visiondetection/3-%E5%BC%82%E5%B8%B8%E6%A3%80%E6%B5%8B.png" alt="异常行为预警" class="w-full h-auto object-cover">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 方案优势 - 移到技术实现前面 -->
+        <section id="advantages" class="mb-32 section-spacing">
+            <div class="text-center mb-20">
+                <h2 class="text-4xl font-bold gradient-text mb-8 inline-block">方案优势</h2>
+                <div class="h-1 w-32 bg-gradient-to-r from-trae-purple to-trae-cyan mx-auto rounded-full"></div>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-10">
+                <!-- 优势1 -->
+                <div class="glass-card rounded-2xl-plus overflow-hidden">
+                    <div class="px-10 py-12">
+                        <div class="flex flex-col items-center text-center mb-8">
+                            <div class="bg-gradient-to-r from-trae-purple to-trae-blue rounded-full p-5 mb-6 opacity-90 w-20 h-20 flex items-center justify-center glow">
+                                <i class="fas fa-coins text-white text-2xl"></i>
+                            </div>
+                            <h3 class="text-2xl font-semibold text-white">成本效益</h3>
+                        </div>
+                        <ul class="space-y-5 text-trae-gray-light">
+                            <li class="flex">
+                                <i class="fas fa-check-circle text-trae-cyan mt-1 mr-4"></i>
+                                <span><strong class="text-white">零硬件新增：</strong>完全复用现有摄像头，节省蓝牙信标、穿戴设备等投入。</span>
+                            </li>
+                            <li class="flex">
+                                <i class="fas fa-check-circle text-trae-cyan mt-1 mr-4"></i>
+                                <span><strong class="text-white">低算力需求：</strong>边缘-云协同计算，普通GPU服务器即可支持百路视频流分析。</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- 优势2 -->
+                <div class="glass-card rounded-2xl-plus overflow-hidden">
+                    <div class="px-10 py-12">
+                        <div class="flex flex-col items-center text-center mb-8">
+                            <div class="bg-gradient-to-r from-trae-purple to-trae-blue rounded-full p-5 mb-6 opacity-90 w-20 h-20 flex items-center justify-center glow">
+                                <i class="fas fa-star text-white text-2xl"></i>
+                            </div>
+                            <h3 class="text-2xl font-semibold text-white">管理价值</h3>
+                        </div>
+                        <ul class="space-y-5 text-trae-gray-light">
+                            <li class="flex">
+                                <i class="fas fa-check-circle text-trae-cyan mt-1 mr-4"></i>
+                                <span><strong class="text-white">安全提升：</strong>实时预警违规闯入、异常聚集等风险。</span>
+                            </li>
+                            <li class="flex">
+                                <i class="fas fa-check-circle text-trae-cyan mt-1 mr-4"></i>
+                                <span><strong class="text-white">效率优化：</strong>通过轨迹数据分析，优化巡检路线、仓储物流流程。</span>
+                            </li>
+                            <li class="flex">
+                                <i class="fas fa-check-circle text-trae-cyan mt-1 mr-4"></i>
+                                <span><strong class="text-white">合规审计：</strong>完整记录人员活动轨迹，满足安全生产追溯需求。</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- 优势3 -->
+                <div class="glass-card rounded-2xl-plus overflow-hidden">
+                    <div class="px-10 py-12">
+                        <div class="flex flex-col items-center text-center mb-8">
+                            <div class="bg-gradient-to-r from-trae-purple to-trae-blue rounded-full p-5 mb-6 opacity-90 w-20 h-20 flex items-center justify-center glow">
+                                <i class="fas fa-expand-alt text-white text-2xl"></i>
+                            </div>
+                            <h3 class="text-2xl font-semibold text-white">扩展性</h3>
+                        </div>
+                        <ul class="space-y-5 text-trae-gray-light">
+                            <li class="flex">
+                                <i class="fas fa-check-circle text-trae-cyan mt-1 mr-4"></i>
+                                <span><strong class="text-white">行为识别扩展：</strong>可叠加摔倒检测、烟火识别等模块。</span>
+                            </li>
+                            <li class="flex">
+                                <i class="fas fa-check-circle text-trae-cyan mt-1 mr-4"></i>
+                                <span><strong class="text-white">多场景适配：</strong>支持工厂、园区、商场等多种环境。</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 技术实现路径 - 被移到方案优势后面 -->
+        <section id="tech" class="mb-32 section-spacing">
+            <div class="text-center mb-20">
+                <h2 class="text-4xl font-bold gradient-text mb-8 inline-block">技术实现路径</h2>
+                <div class="h-1 w-32 bg-gradient-to-r from-trae-purple to-trae-cyan mx-auto rounded-full"></div>
+            </div>
+            
+            <div class="space-y-10">
+                <!-- 硬件部署 -->
+                <div class="glass-card rounded-2xl-plus overflow-hidden">
+                    <div class="px-10 py-12">
+                        <div class="flex items-center mb-8">
+                            <div class="bg-gradient-to-r from-trae-purple to-trae-blue rounded-xl-plus p-4 mr-5 opacity-90">
+                                <i class="fas fa-server text-white text-xl"></i>
+                            </div>
+                            <h3 class="text-2xl font-semibold text-white">硬件部署</h3>
+                        </div>
+                        <ul class="space-y-6 text-trae-gray-light px-4">
+                            <li class="flex">
+                                <i class="fas fa-microchip text-trae-cyan mt-1 mr-4"></i>
+                                <span><strong class="text-white">边缘计算节点：</strong>在监控摄像头侧部署轻量化检测模型（如TensorRT加速的YOLOv8），减少视频传输带宽压力。</span>
+                            </li>
+                            <li class="flex">
+                                <i class="fas fa-cloud text-trae-cyan mt-1 mr-4"></i>
+                                <span><strong class="text-white">云端服务器：</strong>用于跨摄像头数据融合、长期轨迹存储及复杂分析（如行为模式挖掘）。</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- 算法优化策略 -->
+                <div class="glass-card rounded-2xl-plus overflow-hidden">
+                    <div class="px-10 py-12">
+                        <div class="flex items-center mb-8">
+                            <div class="bg-gradient-to-r from-trae-purple to-trae-blue rounded-xl-plus p-4 mr-5 opacity-90">
+                                <i class="fas fa-code text-white text-xl"></i>
+                            </div>
+                            <h3 class="text-2xl font-semibold text-white">算法优化策略</h3>
+                        </div>
+                        <ul class="space-y-6 text-trae-gray-light px-4">
+                            <li class="flex">
+                                <i class="fas fa-shield-alt text-trae-cyan mt-1 mr-4"></i>
+                                <span><strong class="text-white">抗遮挡处理：</strong>采用短期记忆模型（如LSTM）预测遮挡期间目标位置，结合重识别特征库快速恢复跟踪。</span>
+                            </li>
+                            <li class="flex">
+                                <i class="fas fa-layer-group text-trae-cyan mt-1 mr-4"></i>
+                                <span><strong class="text-white">多尺度特征融合：</strong>融合外观（颜色、纹理）与运动特征（光流），提升复杂场景下的跟踪鲁棒性。</span>
+                            </li>
+                            <li class="flex">
+                                <i class="fas fa-compress-arrows-alt text-trae-cyan mt-1 mr-4"></i>
+                                <span><strong class="text-white">轻量化模型：</strong>通过知识蒸馏将大模型（ResNet）压缩为MobileNet结构，适配边缘设备算力。</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- 系统集成 -->
+                <div class="glass-card rounded-2xl-plus overflow-hidden">
+                    <div class="px-10 py-12">
+                        <div class="flex items-center mb-8">
+                            <div class="bg-gradient-to-r from-trae-purple to-trae-blue rounded-xl-plus p-4 mr-5 opacity-90">
+                                <i class="fas fa-puzzle-piece text-white text-xl"></i>
+                            </div>
+                            <h3 class="text-2xl font-semibold text-white">系统集成</h3>
+                        </div>
+                        <ul class="space-y-6 text-trae-gray-light px-4">
+                            <li class="flex">
+                                <i class="fas fa-plug text-trae-cyan mt-1 mr-4"></i>
+                                <span><strong class="text-white">与现有监控平台对接：</strong>通过API输出轨迹数据，叠加至原有监控画面。</span>
+                            </li>
+                            <li class="flex">
+                                <i class="fas fa-user-shield text-trae-cyan mt-1 mr-4"></i>
+                                <span><strong class="text-white">隐私保护机制：</strong>对非授权人员自动打码，仅显示轨迹不保留人脸细节。</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 行动号召 -->
+        <section class="text-center mb-24 section-spacing">
+            <h2 class="text-4xl font-bold gradient-text mb-8">立即开始实施</h2>
+            <p class="text-trae-gray-light mb-12 max-w-2xl mx-auto text-xl leading-relaxed">
+                部署基于视频监控的人员行动轨迹识别系统，提升安全管理水平，优化运营效率。
+            </p>
+            <button class="btn-gradient text-white font-semibold py-5 px-12 rounded-full shadow-lg text-lg">
+                联系我们获取方案
+            </button>
+            <!-- 添加装饰性元素 -->
+            <div class="relative mt-12">
+                <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-16 w-64 h-16 rounded-full animated-gradient opacity-10 blur-xl"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="glass-card text-trae-gray py-8 mt-16">
+        <div class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+            <div class="pt-4 flex justify-center items-center">
+                <p class="text-sm">© 2025 版权所有</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // 移动端菜单切换
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+        
+        // 平滑滚动
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                
+                // 关闭移动端菜单
+                mobileMenu.classList.add('hidden');
+                
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+        
+        // 滚动时显示元素动画
+        function fadeInOnScroll() {
+            const sections = document.querySelectorAll('section');
+            
+            sections.forEach(section => {
+                const sectionTop = section.getBoundingClientRect().top;
+                const windowHeight = window.innerHeight;
+                
+                if (sectionTop < windowHeight * 0.75) {
+                    section.classList.add('fade-in');
+                }
+            });
+        }
+        
+        // 视频轮播功能
+        let slideIndex = 1;
+        let slideTimeout;
+        let activeVideo = null;
+        let isTransitioning = false;
+        let videosLoaded = [false, false, false]; // 跟踪视频加载状态
+        
+        // 预加载所有视频
+        function preloadVideos() {
+            const videos = document.querySelectorAll('.video-player');
+            videos.forEach((video, index) => {
+                // 强制开始加载视频
+                video.load();
+                
+                // 监听加载状态
+                video.addEventListener('loadeddata', function() {
+                    videosLoaded[index] = true;
+                    console.log(`视频 ${index+1} 已加载完成`);
+                });
+                
+                // 如果视频已经加载完成但事件没触发
+                if (video.readyState >= 3) {
+                    videosLoaded[index] = true;
+                }
+            });
+        }
+        
+        // 自动切换视频
+        function autoSlide() {
+            if (isTransitioning) return;
+            nextSlide();
+        }
+        
+        // 下一个视频
+        function nextSlide() {
+            if (isTransitioning) return;
+            isTransitioning = true;
+            
+            const slides = document.getElementsByClassName('video-slide');
+            const dots = document.getElementsByClassName('video-dot');
+            const videos = document.querySelectorAll('.video-player');
+            
+            // 暂停当前视频并保存位置
+            if (activeVideo) {
+                activeVideo.pause();
+            }
+            
+            // 标记当前slide为prev，将要离开
+            slides[slideIndex-1].classList.remove('active');
+            slides[slideIndex-1].classList.add('prev');
+            
+            // 重置指示器样式
+            for (let i = 0; i < dots.length; i++) {
+                dots[i].classList.remove('active');
+                dots[i].style.opacity = '0.5';
+            }
+            
+            // 获取下一个索引
+            slideIndex++;
+            if (slideIndex > slides.length) {slideIndex = 1}
+            
+            // 更新下一张幻灯片的CSS类
+            for (let i = 0; i < slides.length; i++) {
+                if (i === slideIndex-1) {
+                    slides[i].classList.remove('next', 'prev');
+                    slides[i].classList.add('active');
+                } else if (i === slideIndex % slides.length) {
+                    slides[i].classList.remove('active', 'prev');
+                    slides[i].classList.add('next');
+                    slides[i].style.display = 'block'; // 确保下一个slide可见
+                } else {
+                    slides[i].classList.remove('active', 'next');
+                    slides[i].classList.add('prev');
+                }
+            }
+            
+            // 激活指示器
+            dots[slideIndex-1].classList.add('active');
+            dots[slideIndex-1].style.opacity = '1';
+            
+            // 获取新视频元素
+            activeVideo = videos[slideIndex-1];
+            activeVideo.currentTime = 0; // 从头开始播放
+            
+            // 延迟播放，等待过渡动画完成
+            setTimeout(() => {
+                forcePlayVideo(activeVideo, slideIndex-1);
+                isTransitioning = false;
+            }, 800); // 与CSS过渡时间一致
+            
+            // 重新设置定时器
+            clearTimeout(slideTimeout);
+            slideTimeout = setTimeout(autoSlide, 30000);
+        }
+        
+        // 上一个视频
+        function prevSlide() {
+            if (isTransitioning) return;
+            isTransitioning = true;
+            
+            const slides = document.getElementsByClassName('video-slide');
+            const dots = document.getElementsByClassName('video-dot');
+            const videos = document.querySelectorAll('.video-player');
+            
+            // 暂停当前视频
+            if (activeVideo) {
+                activeVideo.pause();
+            }
+            
+            // 当前slide标记为next，将要离开
+            slides[slideIndex-1].classList.remove('active');
+            slides[slideIndex-1].classList.add('next');
+            
+            // 重置指示器
+            for (let i = 0; i < dots.length; i++) {
+                dots[i].classList.remove('active');
+                dots[i].style.opacity = '0.5';
+            }
+            
+            // 获取上一个索引
+            slideIndex--;
+            if (slideIndex < 1) {slideIndex = slides.length}
+            
+            // 更新幻灯片的CSS类
+            for (let i = 0; i < slides.length; i++) {
+                if (i === slideIndex-1) {
+                    slides[i].classList.remove('next', 'prev');
+                    slides[i].classList.add('active');
+                } else if (i === (slideIndex === 1 ? slides.length - 1 : slideIndex - 2)) {
+                    slides[i].classList.remove('active', 'next');
+                    slides[i].classList.add('prev');
+                    slides[i].style.display = 'block'; // 确保上一个slide可见
+                } else {
+                    slides[i].classList.remove('active', 'prev');
+                    slides[i].classList.add('next');
+                }
+            }
+            
+            // 激活指示器
+            dots[slideIndex-1].classList.add('active');
+            dots[slideIndex-1].style.opacity = '1';
+            
+            // 获取新视频元素
+            activeVideo = videos[slideIndex-1];
+            activeVideo.currentTime = 0;
+            
+            // 延迟播放，等待过渡动画完成
+            setTimeout(() => {
+                forcePlayVideo(activeVideo, slideIndex-1);
+                isTransitioning = false;
+            }, 800);
+            
+            // 重新设置定时器
+            clearTimeout(slideTimeout);
+            slideTimeout = setTimeout(autoSlide, 30000);
+        }
+        
+        // 手动切换视频
+        function currentSlide(n) {
+            if (isTransitioning || n === slideIndex) return;
+            
+            // 标记下一个slide的方向
+            const direction = n > slideIndex ? 'next' : 'prev';
+            isTransitioning = true;
+            
+            const slides = document.getElementsByClassName('video-slide');
+            const dots = document.getElementsByClassName('video-dot');
+            const videos = document.querySelectorAll('.video-player');
+            
+            // 暂停所有视频
+            videos.forEach(video => video.pause());
+            
+            // 标记当前slide为离开状态
+            slides[slideIndex-1].classList.remove('active');
+            slides[slideIndex-1].classList.add(direction === 'next' ? 'prev' : 'next');
+            
+            // 重置所有指示器
+            for (let i = 0; i < dots.length; i++) {
+                dots[i].classList.remove('active');
+                dots[i].style.opacity = '0.5';
+            }
+            
+            // 设置新的当前索引
+            const oldIndex = slideIndex - 1;
+            slideIndex = n;
+            
+            // 更新幻灯片的CSS类
+            for (let i = 0; i < slides.length; i++) {
+                // 新的活动幻灯片
+                if (i === slideIndex-1) {
+                    slides[i].classList.remove('next', 'prev');
+                    slides[i].classList.add('active');
+                    slides[i].style.display = 'block';
+                } 
+                // 原来的活动幻灯片
+                else if (i === oldIndex) {
+                    slides[i].classList.remove('active');
+                    slides[i].classList.add(direction === 'next' ? 'prev' : 'next');
+                }
+                // 其他幻灯片
+                else {
+                    if (direction === 'next') {
+                        slides[i].classList.remove('active', 'next');
+                        slides[i].classList.add(i < slideIndex-1 ? 'prev' : 'next');
+                    } else {
+                        slides[i].classList.remove('active', 'prev');
+                        slides[i].classList.add(i < slideIndex-1 ? 'prev' : 'next');
+                    }
+                }
+            }
+            
+            dots[slideIndex-1].classList.add('active');
+            dots[slideIndex-1].style.opacity = '1';
+            
+            // 获取新视频元素
+            activeVideo = videos[slideIndex-1];
+            activeVideo.currentTime = 0;
+            
+            // 延迟播放，等待过渡动画完成
+            setTimeout(() => {
+                forcePlayVideo(activeVideo, slideIndex-1);
+                isTransitioning = false;
+            }, 800);
+            
+            // 重新设置定时器
+            clearTimeout(slideTimeout);
+            slideTimeout = setTimeout(autoSlide, 30000);
+        }
+        
+        // 强制播放视频（更可靠的方法）
+        function forcePlayVideo(video, index) {
+            if (!video) return;
+            
+            // 确保视频元素可见
+            const slide = video.closest('.video-slide');
+            if (slide) {
+                slide.style.display = 'block';
+                slide.style.opacity = '1';
+                slide.style.transform = 'translateX(0)';
+            }
+            
+            // 如果视频未加载完成，等待加载
+            if (!videosLoaded[index]) {
+                console.log(`等待视频 ${index+1} 加载...`);
+                video.addEventListener('loadeddata', function playWhenLoaded() {
+                    playVideoWithFallback(video);
+                    video.removeEventListener('loadeddata', playWhenLoaded);
+                });
+                // 确保加载进程开始
+                video.load();
+            } else {
+                playVideoWithFallback(video);
+            }
+        }
+        
+        // 带有多种回退选项的播放函数
+        function playVideoWithFallback(video) {
+            // 尝试播放
+            const playPromise = video.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.log("播放视频出错:", error);
+                    
+                    // 错误处理和回退策略
+                    if (error.name === "NotAllowedError") {
+                        // 自动播放被阻止，等待用户交互
+                        console.log("自动播放被浏览器阻止，需要用户交互");
+                        // 添加点击监听器以在用户交互时播放
+                        document.addEventListener('click', function tryPlayAgain() {
+                            video.play().catch(e => console.log("重试播放失败:", e));
+                            document.removeEventListener('click', tryPlayAgain);
+                        }, { once: true });
+                        
+                        // 显示播放按钮或提示
+                        const videoContainer = document.querySelector('.video-container');
+                        if (videoContainer) {
+                            videoContainer.classList.add('autoplay-blocked');
+                        }
+                    } else {
+                        // 其他错误，尝试不同的方法
+                        console.log("尝试替代播放方法");
+                        setTimeout(() => {
+                            video.play().catch(e => console.log("替代播放方法也失败:", e));
+                        }, 500);
+                    }
+                });
+            }
+        }
+        
+        // 视频播放的辅助函数
+        function playVideo(video) {
+            // 使用回退策略播放视频
+            playVideoWithFallback(video);
+        }
+        
+        // 初始化视频轮播
+        function initVideoCarousel() {
+            const slides = document.getElementsByClassName('video-slide');
+            const videos = document.querySelectorAll('.video-player');
+            
+            // 预加载所有视频
+            preloadVideos();
+            
+            // 设置初始状态，以便过渡动画正常工作
+            if (slides.length > 1) {
+                slides[1].classList.add('next');
+                slides[1].style.display = 'block'; // 确保下一个slide预先可见
+                
+                if (slides.length > 2) {
+                    for (let i = 2; i < slides.length; i++) {
+                        slides[i].classList.add('next');
+                    }
+                }
+            }
+            
+            // 视频结束后自动切换到下一个
+            videos.forEach((video, index) => {
+                video.addEventListener('ended', () => {
+                    if (!isTransitioning) {
+                        nextSlide();
+                    }
+                });
+                
+                // 监听视频播放错误
+                video.addEventListener('error', (e) => {
+                    console.error(`视频 ${index+1} 加载错误:`, e);
+                });
+            });
+            
+            // 确保第一个视频加载完毕并播放
+            activeVideo = videos[0];
+            forcePlayVideo(activeVideo, 0);
+            
+            // 手动触发加载所有视频
+            videos.forEach(video => {
+                // 直接开始下载视频数据
+                if (video.preload !== 'auto') {
+                    video.preload = 'auto';
+                }
+                video.load();
+            });
+        }
+        
+        // 检查视频状态
+        function checkVideosStatus() {
+            const videos = document.querySelectorAll('.video-player');
+            videos.forEach((video, index) => {
+                console.log(`视频 ${index+1} 加载状态: ${video.readyState}, 网络状态: ${video.networkState}`);
+                // 如果视频已经可以播放
+                if (video.readyState >= 3 && !videosLoaded[index]) {
+                    videosLoaded[index] = true;
+                    console.log(`视频 ${index+1} 标记为已加载`);
+                }
+            });
+        }
+        
+        // 页面加载时执行
+        window.onload = function() {
+            fadeInOnScroll();
+            initVideoCarousel();
+            
+            // 设置自动轮播定时器
+            slideTimeout = setTimeout(autoSlide, 30000);
+            
+            // 定期检查视频状态
+            setInterval(checkVideosStatus, 2000);
+        };
+    </script>
+</body>
+</html> 
